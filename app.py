@@ -17,7 +17,7 @@ ma = Marshmallow(app)
 # reminder class and schema
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.string, nullable=False)
+    text = db.Column(db.String, nullable=False)
     date = db.Column(db.Integer, nullable=False)
     month_id = db.Column(db.Integer, db.ForeignKey('month.id'), nullable=False)
 
@@ -42,16 +42,15 @@ class Month(db.Model):
     start_day = db.Column(db.Integer, nullable=False)
     days_in_month = db.Column(db.Integer, nullable=False)
     previous_days = db.Column(db.Integer, nullable=False)
-    reminders = db.Column(db.relationship('Reminder', backref='month', cascade='all, delete, delete-orphan'))
+    reminders = db.relationship('Reminder', backref='month', cascade='all, delete, delete-orphan')
 
 
-    def __init__(self, name, year, start_day, days_in_month, previous_days, reminders):
+    def __init__(self, name, year, start_day, days_in_month, previous_days):
         self.name = name
         self.year = year
         self.start_day = start_day
         self.days_in_month = days_in_month
         self.previous_days = previous_days
-        self.reminders = reminders
 
 class MonthSchema(ma.Schema):
     class Meta:
@@ -111,6 +110,7 @@ def add_months():
         start_day = month.get('start_day')
         days_in_month = month.get('days_in_month')
         previous_days = month.get('previous_days')
+        reminders = month.get('reminders')
 
         existing_month_check = db.session.query(Month).filter(Month.name == name).filter(Month.year == year).first()
         if existing_month_check is not None:
@@ -118,7 +118,7 @@ def add_months():
         else:
             new_record = Month(name, year, start_day, days_in_month, previous_days)
             db.session.add(new_record)
-            db.commit()
+            db.session.commit()
             new_records.append(new_record)
 
     return jsonify(multi_month_schema.dump(new_records))
@@ -127,6 +127,11 @@ def add_months():
 def get_reminders():
     all_reminders = db.session.query(Reminder).all()
     return jsonify(multi_reminder_schema.dump(all_reminders))
+
+
+# @app.route('month/delete', methods=["DELETE"])
+# def delete_month(id):
+
     
 
 

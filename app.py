@@ -9,9 +9,12 @@ CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'app.sqlite')
-db = SQLAlchemy(app)
+
+db = SQLAlchemy(app) #database
 ma = Marshmallow(app)
 
+
+# reminder class and schema
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.string, nullable=False)
@@ -31,6 +34,7 @@ reminder_schema = ReminderSchema()
 multi_reminder_schema = ReminderSchema(many=True)
 
 
+# month class and schema
 class Month(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     name = db.Column(db.String, nullable=False)
@@ -58,22 +62,66 @@ month_schema = MonthSchema()
 multi_month_schema = MonthSchema(many=True)
 
 
-
-
-@app.route('month', methods=["GET"])
+# endpoints
+@app.route('/month', methods=["GET"])
 def get_month(id):
     one_month = db.session.query(Month).filter(Month.id == id).first()
     return jsonify(month_schema.dump(one_month))
 
-@app.route('months', methods=["GET"])
+@app.route('/months', methods=["GET"])
 def get_all_months():
     all_months = db.session.query(Month).all()
     return jsonify(multi_month_schema.dump(all_months))
 
-@app.route('month/add', methods=["POST"])
+@app.route('/month/add', methods=["POST"])
 def add_month():
     if request.content_type != 'application/json':
         return jsonify('content must be json')
+    post_data = request.get_json()
+
+    name = post_data.get('name')
+    year = post_data.get('year')
+    start_day = post_data.get('start_day')
+    days_in_month = post_data.get('days_in_month')
+    previous_days = post_data.get('previous_days')
+
+    existing_month_check = db.session.query(Month).filter(Month.name == year).first()
+    if existing_month_check is not None:
+        return jsonify('that month is already in here')
+
+    new_record = Month(name, year, start_day, days_in_month, previous_days)
+    db.session.add(new_record)
+    db.commit()
+
+    return jsonify(month_schema.dump(new_record))
+
+
+@app.route('/months/add', methods=["POST"])
+def add_months():
+    if request.content_type != 'application/json':
+        return jsonify('content must be json')
+    post_data = request.get_json()
+    data = post_data.get("data")
+
+    new_records = []
+
+    for month in data:
+        name = month.get('name')
+        year = month.get('year')
+        start_day = month.get('start_day')
+        days_in_month = month.get('days_in_month')
+        previous_days = month.get('previous_days')
+
+        existing_month_check = db.session.query(Month).filter(Month.name == name).filter(Month.year == year).first()
+        if existing_month_check is not None:
+            return jsonify('that month is already in here')
+        else:
+            new_record = Month(name, year, start_day, days_in_month, previous_days)
+            db.session.add(new_record)
+            db.commit()
+            new_records.append(new_record)
+
+    return jsonify(multi_month_schema.dump(new_records))
 
 @app.route('/reminders', methods=["GET"])
 def get_reminders():
@@ -82,6 +130,6 @@ def get_reminders():
     
 
 
-
+# run app
 if __name__ == '__main__':
     app.run(debug=True)

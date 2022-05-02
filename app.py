@@ -28,7 +28,7 @@ class Reminder(db.Model):
 
 class ReminderSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'date', 'month_id')
+        fields = ('id', 'date', 'month_id', 'text')
 
 reminder_schema = ReminderSchema()
 multi_reminder_schema = ReminderSchema(many=True)
@@ -63,7 +63,7 @@ multi_month_schema = MonthSchema(many=True)
 
 # reminder endpoints
 @app.route('/reminder/add', methods=["POST"])
-def add_month():
+def add_reminder():
     if request.content_type != 'application/json':
         return jsonify('content must be json')
     post_data = request.get_json()
@@ -72,13 +72,13 @@ def add_month():
     date = post_data.get('date')
     month_id = post_data.get('month_id')
 
-    existing_reminder_check = db.session.query().filter(Reminder.date == date).filter(month_id == month_id).first()
+    existing_reminder_check = db.session.query(Reminder).filter(Reminder.date == date).filter(month_id == month_id).first()
     if existing_reminder_check is not None:
         return jsonify('that reminder is already in here')
 
     new_record = Reminder(text, date, month_id)
     db.session.add(new_record)
-    db.commit()
+    db.session.commit()
 
     return jsonify(reminder_schema.dump(new_record))
 
@@ -92,7 +92,7 @@ def get_reminder(month_id, date):
     reminder = db.session.query(Reminder).filter(Reminder.month_id == month_id).filter(Reminder.date == date).first()
     return jsonify(reminder_schema.dump(reminder))
 
-@app.route('/reminder/update/<month_id/<date>', methods=["PUT"])
+@app.route('/reminder/update/<month_id>/<date>', methods=["PUT"])
 def update_reminder(month_id, date):
     if request.content_type != 'application/json':
         return jsonify('put that as json')
@@ -106,7 +106,7 @@ def update_reminder(month_id, date):
 
     return jsonify(reminder_schema.dump(reminder_to_update))
 
-@app.route('reminder/delete/<month_id>/<date>', methods=["DELETE"])
+@app.route('/reminder/delete/<month_id>/<date>', methods=["DELETE"])
 def delete_reminder(month_id, date):
     reminder_delete = db.session.query(Reminder).filter(Reminder.month_id == month_id).filter(Reminder.date == date).first()
     db.session.delete(reminder_delete)
@@ -115,7 +115,7 @@ def delete_reminder(month_id, date):
 
 
 # month endpoints
-@app.route('month/delete/<id>', methods=["DELETE"])
+@app.route('/month/delete/<id>', methods=["DELETE"])
 def delete_month(id):
     month_delete = db.session.query(Month).filter(Month.id == id).first()
     db.session.delete(month_delete)
@@ -209,7 +209,7 @@ def add_month():
 
     new_record = Month(name, year, start_day, days_in_month, previous_days)
     db.session.add(new_record)
-    db.commit()
+    db.session.commit()
 
     return jsonify(month_schema.dump(new_record))
 

@@ -54,7 +54,7 @@ class Month(db.Model):
 
 class MonthSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'year', 'start_day', 'days_in_month', 'previous_days', 'reminders')
+        fields = ('id', 'year', 'start_day', 'days_in_month', 'previous_days', 'reminders', 'name')
     reminders = ma.Nested(multi_reminder_schema)
 
 month_schema = MonthSchema()

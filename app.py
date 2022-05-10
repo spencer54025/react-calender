@@ -14,6 +14,25 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 
+# month class and schema
+class Month(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    name = db.Column(db.String, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    start_day = db.Column(db.Integer, nullable=False)
+    days_in_month = db.Column(db.Integer, nullable=False)
+    previous_days = db.Column(db.Integer, nullable=False)
+    reminders = db.relationship('Reminder', backref='month', cascade='all, delete, delete-orphan')
+
+
+    def __init__(self, name, year, start_day, days_in_month, previous_days):
+        self.name = name
+        self.year = year
+        self.start_day = start_day
+        self.days_in_month = days_in_month
+        self.previous_days = previous_days
+
+
 # reminder class and schema
 class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -33,24 +52,6 @@ class ReminderSchema(ma.Schema):
 reminder_schema = ReminderSchema()
 multi_reminder_schema = ReminderSchema(many=True)
 
-
-# month class and schema
-class Month(db.Model):
-    id = db.Column(db.Integer, primary_key=True, nullable=False)
-    name = db.Column(db.String, nullable=False)
-    year = db.Column(db.Integer, nullable=False)
-    start_day = db.Column(db.Integer, nullable=False)
-    days_in_month = db.Column(db.Integer, nullable=False)
-    previous_days = db.Column(db.Integer, nullable=False)
-    reminders = db.relationship('Reminder', backref='month', cascade='all, delete, delete-orphan')
-
-
-    def __init__(self, name, year, start_day, days_in_month, previous_days):
-        self.name = name
-        self.year = year
-        self.start_day = start_day
-        self.days_in_month = days_in_month
-        self.previous_days = previous_days
 
 class MonthSchema(ma.Schema):
     class Meta:
@@ -106,7 +107,7 @@ def update_reminder(month_id, date):
 
     return jsonify(reminder_schema.dump(reminder_to_update))
 
-@app.route('/reminder/delete/<month_id>/<date>', methods=["DELETE"])
+@app.route('/reminder/delete/<month_id>/<date>', methods=["GET"])
 def delete_reminder(month_id, date):
     reminder_delete = db.session.query(Reminder).filter(Reminder.month_id == month_id).filter(Reminder.date == date).first()
     db.session.delete(reminder_delete)

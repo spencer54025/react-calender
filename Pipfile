@@ -10,6 +10,8 @@ flask-marshmallow = "*"
 flask-cors = "*"
 marshmallow-sqlalchemy = "*"
 marshmallow = "*"
+gunicorn = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
